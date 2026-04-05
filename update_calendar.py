@@ -13,7 +13,7 @@ REG_ID_LAND = os.environ.get('REG_ID_LAND', '11B00000')
 API_KEY = os.environ.get('KMA_API_KEY')
 
 def get_weather_info(sky, pty):
-    """단기 예보 코드 판별"""
+    """단기 예보 코드 판별 (특수 기상 포함)"""
     sky, pty = str(sky), str(pty)
     if pty != '0':
         if pty in ['1', '4', '5']: return "🌧️", "비/소나기"
@@ -26,7 +26,7 @@ def get_weather_info(sky, pty):
     return "🌡️", "정보없음"
 
 def get_mid_emoji(wf):
-    """중기 예보 문자열 판별"""
+    """중기 예보 문자열 판별 (진눈깨비 등 포함)"""
     if not wf: return "🌡️"
     if '비' in wf or '소나기' in wf or '적심' in wf: return "🌧️"
     if '눈' in wf or '진눈깨비' in wf: return "🌨️"
@@ -65,7 +65,7 @@ def main():
             if t not in forecast_map[d]: forecast_map[d][t] = {}
             forecast_map[d][t][cat] = val
 
-    # --- [2. 단기 예보 조립 (하루 1개 일정 + 메모란 상세)] ---
+    # --- [2. 단기 예보 조립 (하루 1개 일정 + 메모란 이모지 강화)] ---
     short_limit = (now + timedelta(days=3)).strftime('%Y%m%d')
     for d_str in sorted(forecast_map.keys()):
         if d_str > short_limit: continue
@@ -87,14 +87,16 @@ def main():
             t_info = day_data[t_str]
             emoji, wf_str = get_weather_info(t_info['SKY'], t_info['PTY'])
             temp = t_info['TMP']
-            reh = t_info.get('REH', '-')
-            wsd = t_info.get('WSD', '-')
+            reh = t_info.get('REH', '-') # 습도
+            wsd = t_info.get('WSD', '-') # 풍속
             pty = t_info.get('PTY', '0')
-            pop = t_info.get('POP', '0')
+            pop = t_info.get('POP', '0') # 강수확률
             
-            pop_str = f" ☔{pop}%" if pty != '0' else ""
-            # 요청하신 형식: [09시] ☀️ 맑음 9°C (습도80%, 풍속1.5m/s)
-            line = f"[{t_str[:2]}시] {emoji} {wf_str} {temp}°C{pop_str} (습도{reh}%, 풍속{wsd}m/s)"
+            # 강수확률 표시 여부 (비/눈 올 때만 ☔ 추가)
+            pop_prefix = f"☔{pop}% " if pty != '0' else ""
+            
+            # 요청하신 형식: [09시] ☀️ 맑음 9°C (💧80%, 🚩1.5m/s)
+            line = f"[{t_str[:2]}시] {emoji} {wf_str} {temp}°C ({pop_prefix}💧{reh}%, 🚩{wsd}m/s)"
             description.append(line)
         
         event.add('description', "\n".join(description))
