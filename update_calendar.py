@@ -4,32 +4,43 @@ import pytz
 from datetime import datetime, timedelta
 from icalendar import Calendar, Event
 
-# --- [1. 설정] Secrets 미설정 시 즉시 에러 발생 (보안/정확성) ---
-NX = int(os.environ['KMA_NX'])
-NY = int(os.environ['KMA_NY'])
-LOCATION_NAME = os.environ['LOCATION_NAME']
-REG_ID_TEMP = os.environ['REG_ID_TEMP']
-REG_ID_LAND = os.environ['REG_ID_LAND']
+# --- [1. 설정] ---
+NX = int(os.environ.get('KMA_NX', 60))
+NY = int(os.environ.get('KMA_NY', 127))
+LOCATION_NAME = os.environ.get('LOCATION_NAME', '내 위치')
+REG_ID_TEMP = os.environ.get('REG_ID_TEMP', '11B10101')
+REG_ID_LAND = os.environ.get('REG_ID_LAND', '11B00000')
 API_KEY = os.environ['KMA_API_KEY']
 
 def get_weather_info(sky, pty):
-    """단기 예보 기상 상태 판별"""
+    """
+    기상청 단기예보 강수형태(PTY) 공식 코드 반영
+    0: 없음, 1: 비, 2: 비/눈, 3: 눈, 4: 소나기, 5: 빗방울, 6: 빗방울눈날림, 7: 눈날림
+    """
     sky, pty = str(sky), str(pty)
-    if pty != '0':
-        if pty in ['1', '4', '5']: return "🌧️", "비/소나기"
-        if pty in ['2', '6']: return "🌨️", "비/눈"
-        if pty in ['3', '7']: return "❄️", "눈"
-        return "🌧️", "강수"
+    
+    # 1. 강수 형태가 있는 경우 (PTY != '0')
+    if pty == '1': return "🌧️", "비"
+    if pty == '2': return "🌨️", "비/눈(진눈깨비)"
+    if pty == '3': return "❄️", "눈"
+    if pty == '4': return "☔", "소나기"
+    if pty == '5': return "💧", "빗방울"
+    if pty == '6': return "🌨️", "빗방울/눈날림"
+    if pty == '7': return "❄️", "눈날림"
+
+    # 2. 강수 형태가 없는 경우 (PTY == '0'), 하늘상태(SKY) 기준
     if sky == '1': return "☀️", "맑음"
     if sky == '3': return "⛅", "구름많음"
     if sky == '4': return "☁️", "흐림"
+    
     return "🌡️", "정보없음"
 
 def get_mid_emoji(wf):
-    """중기 예보 기상 상태 판별"""
+    """중기 예보 기상 상태(텍스트 기반) 판별"""
     if not wf: return "🌡️"
     wf = wf.replace(" ", "")
-    if '비' in wf or '소나기' in wf: return "🌧️"
+    if '소나기' in wf: return "☔"
+    if '비' in wf: return "🌧️"
     if '눈' in wf or '진눈깨비' in wf: return "🌨️"
     if '구름많음' in wf: return "⛅"
     if '흐림' in wf: return "☁️"
@@ -37,12 +48,15 @@ def get_mid_emoji(wf):
     return "☀️"
 
 def fetch_api(url):
-    """API 호출 공통 함수"""
     try:
         res = requests.get(url, timeout=15)
-        if res.status_code == 200: return res.json()
-    except: return None
-    return None
+        if res.status_code == 200:
+            data = res.json()
+            if data.get('response', {}).get('header', {}).get('resultCode') == '00':
+                return data
+        return None
+    except:
+        return None
 
 def main():
     seoul_tz = pytz.timezone('Asia/Seoul')
@@ -53,17 +67,18 @@ def main():
     cal.add('X-WR-CALNAME', '기상청 날씨')
     cal.add('X-WR-TIMEZONE', 'Asia/Seoul')
 
-    # --- [2. 단기 예보 수집 및 조립] ---
+    # --- [2. 단기 예보 (오늘 ~ +3일)] ---
     base_date = now.strftime('%Y%m%d')
     base_h = max([h for h in [2, 5, 8, 11, 14, 17, 20, 23] if h <= now.hour], default=2)
     base_time = f"{base_h:02d}00"
+    
     url_short = f"https://apihub.kma.go.kr/api/typ02/openApi/VilageFcstInfoService_2.0/getVilageFcst?dataType=JSON&base_date={base_date}&base_time={base_time}&nx={NX}&ny={NY}&numOfRows=1000&authKey={API_KEY}"
     
     forecast_map = {}
     short_res = fetch_api(url_short)
     processed_dates = set()
 
-    if short_res and 'response' in short_res and 'body' in short_res['response']:
+    if short_res and 'body' in short_res['response']:
         items = short_res['response']['body']['items']['item']
         for it in items:
             d, t, cat, val = it['fcstDate'], it['fcstTime'], it['category'], it['fcstValue']
@@ -71,16 +86,11 @@ def main():
             if t not in forecast_map[d]: forecast_map[d][t] = {}
             forecast_map[d][t][cat] = val
 
-    # 개별 항목 캐시 (매시간 데이터 패딩용)
     cache = {'TMP': '15', 'SKY': '1', 'PTY': '0', 'REH': '50', 'WSD': '1.0', 'POP': '0'}
-
-    # [규칙 반영] 오늘 포함 딱 4일치(오늘+3일)까지만 매시간 상세 예보로 처리
     short_term_limit = (now + timedelta(days=3)).strftime('%Y%m%d')
 
     for d_str in sorted(forecast_map.keys()):
-        # 4일차를 넘어가는 데이터는 매시간 생성을 하지 않고 중기 예보로 넘김
-        if d_str > short_term_limit:
-            continue
+        if d_str > short_term_limit: continue
 
         day_data = forecast_map[d_str]
         tmps = [float(day_data[t]['TMP']) for t in day_data if 'TMP' in day_data[t]]
@@ -96,19 +106,17 @@ def main():
             t_str = f"{h:02d}00"
             event_time = seoul_tz.localize(datetime.strptime(f"{d_str}{t_str}", '%Y%m%d%H%M'))
             
-            # 데이터가 있는 항목 캐시 업데이트
             if t_str in day_data:
                 for cat in cache.keys():
                     if cat in day_data[t_str]: cache[cat] = day_data[t_str][cat]
             
-            # 현재 시간 이후의 데이터만 desc에 추가 (과거 시간 필터링)
             if event_time >= now:
                 emoji, wf_str = get_weather_info(cache['SKY'], cache['PTY'])
-                pop_prefix = f"☔{cache['POP']}% " if cache['PTY'] != '0' else ""
-                desc.append(f"[{t_str[:2]}시] {emoji} {wf_str} {cache['TMP']}°C ({pop_prefix}💧{cache['REH']}% 🚩{cache['WSD']}m/s)")
+                # 강수확률(POP)은 비가 안 와도 표시, 비가 오면 아이콘 변경
+                rain_icon = "☔" if cache['PTY'] != '0' else "💧"
+                desc.append(f"[{t_str[:2]}시] {emoji} {wf_str} {cache['TMP']}°C ({rain_icon}{cache['POP']}% 습도{cache['REH']}% 풍속{cache['WSD']}m/s)")
                 has_future_data = True
         
-        # 오늘 이미 모든 시간이 지났다면 일정 생성 건너뜀
         if not has_future_data: continue
 
         event = Event()
@@ -118,26 +126,40 @@ def main():
         event.add('description', "\n".join(desc))
         
         event_date = datetime.strptime(d_str, '%Y%m%d').date()
-        event.add('dtstart', event_date); event.add('dtend', event_date + timedelta(days=1))
+        event.add('dtstart', event_date)
+        event.add('dtend', event_date + timedelta(days=1))
         event.add('uid', f"{d_str}@short_summary")
         cal.add_component(event)
         processed_dates.add(d_str)
 
-    # --- [3. 중기 예보 수집 및 조립] ---
-    tm_fc = now.strftime('%Y%m%d') + ("0600" if now.hour < 12 else "1800")
+    # --- [3. 중기 예보 (14:00 업데이트 이슈 해결 로직)] ---
+    # 오후 6시 30분 전까지는 안전하게 오전 6시 데이터를 참조
+    if now.hour < 6:
+        tm_fc = (now - timedelta(days=1)).strftime('%Y%m%d') + "1800"
+    elif now.hour < 18:
+        tm_fc = now.strftime('%Y%m%d') + "0600"
+    else:
+        tm_fc = now.strftime('%Y%m%d') + "1800"
+
     url_mid_temp = f"https://apihub.kma.go.kr/api/typ02/openApi/MidFcstInfoService/getMidTa?dataType=JSON&regId={REG_ID_TEMP}&tmFc={tm_fc}&authKey={API_KEY}"
     url_mid_land = f"https://apihub.kma.go.kr/api/typ02/openApi/MidFcstInfoService/getMidLandFcst?dataType=JSON&regId={REG_ID_LAND}&tmFc={tm_fc}&authKey={API_KEY}"
     
     t_res, l_res = fetch_api(url_mid_temp), fetch_api(url_mid_land)
-    if t_res and l_res and 'response' in t_res and 'response' in l_res:
+    
+    # 만약 18:00 데이터가 아직 생성 전이라 실패하면 06:00 데이터로 백업 호출
+    if not (t_res and l_res) and tm_fc.endswith("1800"):
+        tm_fc = now.strftime('%Y%m%d') + "0600"
+        url_mid_temp = f"https://apihub.kma.go.kr/api/typ02/openApi/MidFcstInfoService/getMidTa?dataType=JSON&regId={REG_ID_TEMP}&tmFc={tm_fc}&authKey={API_KEY}"
+        url_mid_land = f"https://apihub.kma.go.kr/api/typ02/openApi/MidFcstInfoService/getMidLandFcst?dataType=JSON&regId={REG_ID_LAND}&tmFc={tm_fc}&authKey={API_KEY}"
+        t_res, l_res = fetch_api(url_mid_temp), fetch_api(url_mid_land)
+
+    if t_res and l_res:
         try:
             t_items = t_res['response']['body']['items']['item'][0]
             l_items = l_res['response']['body']['items']['item'][0]
             for i in range(3, 11):
                 d_target_dt = now + timedelta(days=i)
                 d_target_str = d_target_dt.strftime('%Y%m%d')
-                
-                # 단기 예보(매시간)가 이미 처리된 날짜는 중복 방지를 위해 건너뜀
                 if d_target_str in processed_dates: continue
                 
                 t_min, t_max = t_items.get(f'taMin{i}'), t_items.get(f'taMax{i}')
@@ -154,8 +176,7 @@ def main():
                     mid_desc.append(f"[오전] {get_mid_emoji(wf_am)} {wf_am} (☔{rn_am}%)")
                     mid_desc.append(f"[오후] {get_mid_emoji(wf_pm)} {wf_pm} (☔{rn_pm}%)")
                 else:
-                    wf_rep_val = l_items.get(f'wf{i}')
-                    rn_st = l_items.get(f'rnSt{i}')
+                    wf_rep_val, rn_st = l_items.get(f'wf{i}'), l_items.get(f'rnSt{i}')
                     mid_desc.append(f"[종일] {get_mid_emoji(wf_rep_val)} {wf_rep_val} (☔{rn_st}%)")
 
                 event.add('summary', f"{get_mid_emoji(wf_rep)} {wf_rep} {t_min}/{t_max}°C")
@@ -164,9 +185,12 @@ def main():
                 event.add('description', "\n".join(mid_desc))
                 
                 event_date = d_target_dt.date()
-                event.add('dtstart', event_date); event.add('dtend', event_date + timedelta(days=1))
-                event.add('uid', f"{d_target_str}@mid"); cal.add_component(event)
-        except: pass
+                event.add('dtstart', event_date)
+                event.add('dtend', event_date + timedelta(days=1))
+                event.add('uid', f"{d_target_str}@mid")
+                cal.add_component(event)
+        except:
+            pass
 
     with open('weather.ics', 'wb') as f:
         f.write(cal.to_ical())
