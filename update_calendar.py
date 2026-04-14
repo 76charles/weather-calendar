@@ -206,6 +206,8 @@ def main():
                 d_target_dt = tm_fc_dt + timedelta(days=i)
                 d_target_str = d_target_dt.strftime('%Y%m%d')
 
+                print(f"[DEBUG] i={i}, date={d_target_str}, in_processed={d_target_str in processed_dates}")
+
                 # 이미 단기예보로 처리된 날짜는 skip
                 if d_target_str in processed_dates: continue
 
