@@ -48,47 +48,28 @@ def fetch_api(url):
     except:
         return None
 
-# --- [수정 1] base_h 계산 함수: 자정~01:59 시 전날 2300 폴백 ---
 def get_base_datetime(now):
-    """
-    현재 시각 기준으로 가장 최근에 발표된 단기예보 base_date/base_time을 반환.
-    발표 시각: 02, 05, 08, 11, 14, 17, 20, 23시 (발표 후 약 10분 뒤 게시)
-    → 실제 안전 사용 가능 시각은 발표 후 +10분으로 처리
-    자정~01:59: 전날 2300 발표본 사용
-    """
     release_hours = [2, 5, 8, 11, 14, 17, 20, 23]
-    # 10분 여유를 두고 현재 시각에서 유효한 마지막 발표 시각을 찾음
     effective_now = now - timedelta(minutes=10)
     valid = [h for h in release_hours if h <= effective_now.hour]
     if valid:
         base_h = max(valid)
         return effective_now.strftime('%Y%m%d'), f"{base_h:02d}00"
     else:
-        # 전날 2300 발표본 사용
         prev = effective_now - timedelta(days=1)
         return prev.strftime('%Y%m%d'), "2300"
 
-# --- [수정 2] 중기예보 tmFc 후보 목록 반환 (현재 → 이전 순) ---
 def get_tmfc_candidates(now):
-    """
-    중기예보 tmFc 후보를 최신순으로 반환.
-    API 게시 지연(약 30분)을 감안해 현재 tmFc와 이전 tmFc 모두 시도.
-    발표: 06시, 18시
-    """
     candidates = []
-    # 현재 발표 시각 계산 (30분 여유)
     effective_now = now - timedelta(minutes=30)
 
     if effective_now.hour < 6:
-        # 전날 18시 → 전전날 18시
         c1 = (effective_now - timedelta(days=1)).replace(hour=18, minute=0, second=0, microsecond=0)
         c2 = (effective_now - timedelta(days=2)).replace(hour=18, minute=0, second=0, microsecond=0)
     elif effective_now.hour < 18:
-        # 오늘 06시 → 전날 18시
         c1 = effective_now.replace(hour=6, minute=0, second=0, microsecond=0)
         c2 = (effective_now - timedelta(days=1)).replace(hour=18, minute=0, second=0, microsecond=0)
     else:
-        # 오늘 18시 → 오늘 06시
         c1 = effective_now.replace(hour=18, minute=0, second=0, microsecond=0)
         c2 = effective_now.replace(hour=6, minute=0, second=0, microsecond=0)
 
@@ -106,7 +87,6 @@ def main():
     cal.add('X-WR-TIMEZONE', 'Asia/Seoul')
 
     # --- [2. 단기 예보] ---
-    # [수정 1 적용] 자정~01:59 전날 2300 폴백 포함
     base_date, base_time = get_base_datetime(now)
 
     url_short = (
@@ -173,7 +153,6 @@ def main():
         processed_dates.add(d_str)
 
     # --- [3. 중기 예보] ---
-    # [수정 2 적용] tmFc 후보 순서대로 시도 (API 발표 지연 대응)
     tmfc_candidates = get_tmfc_candidates(now)
 
     t_res, l_res, tm_fc_dt = None, None, None
@@ -191,49 +170,45 @@ def main():
         l_try = fetch_api(url_mid_land)
         if t_try and l_try:
             t_res, l_res, tm_fc_dt = t_try, l_try, candidate
-            break  # 성공한 tmFc 사용
+            break
 
     if t_res and l_res and tm_fc_dt:
         try:
             t_items = t_res['response']['body']['items']['item'][0]
             l_items = l_res['response']['body']['items']['item'][0]
-            print(f"[DEBUG] tm_fc_dt={tm_fc_dt}, t_items keys={list(t_items.keys())}")
         except (KeyError, IndexError, TypeError):
             t_items, l_items = None, None
 
         if t_items and l_items:
-            # [수정 3] i=3~10 범위를 순회하되, processed_dates 미포함 날짜만 채움
             for i in range(3, 11):
                 d_target_dt = tm_fc_dt + timedelta(days=i)
                 d_target_str = d_target_dt.strftime('%Y%m%d')
 
-                print(f"[DEBUG] i={i}, date={d_target_str}, in_processed={d_target_str in processed_dates}")
-
-                # 이미 단기예보로 처리된 날짜는 skip
                 if d_target_str in processed_dates: continue
-
-                # [수정 4] 과거 날짜는 skip (tmFc 폴백으로 과거 날짜가 나올 수 있음)
                 if d_target_str < now.strftime('%Y%m%d'): continue
 
-                t_min = t_items.get(f'taMin{i}')
-                t_max = t_items.get(f'taMax{i}')
+                # tm_fc_dt 기준 실제 API 필드 번호 계산
+                field_i = (d_target_dt.date() - tm_fc_dt.date()).days
+
+                t_min = t_items.get(f'taMin{field_i}')
+                t_max = t_items.get(f'taMax{field_i}')
                 if t_min is None or t_max is None: continue
 
-                wf_rep = l_items.get(f'wf{i}Pm') if i <= 7 else l_items.get(f'wf{i}')
+                wf_rep = l_items.get(f'wf{field_i}Pm') if field_i <= 7 else l_items.get(f'wf{field_i}')
                 if wf_rep is None: continue
 
                 event = Event()
                 mid_desc = []
-                if i <= 7:
-                    wf_am = l_items.get(f'wf{i}Am')
-                    wf_pm = l_items.get(f'wf{i}Pm')
-                    rn_am = l_items.get(f'rnSt{i}Am')
-                    rn_pm = l_items.get(f'rnSt{i}Pm')
+                if field_i <= 7:
+                    wf_am = l_items.get(f'wf{field_i}Am')
+                    wf_pm = l_items.get(f'wf{field_i}Pm')
+                    rn_am = l_items.get(f'rnSt{field_i}Am')
+                    rn_pm = l_items.get(f'rnSt{field_i}Pm')
                     mid_desc.append(f"[오전] {get_mid_emoji(wf_am)} {wf_am} (☔{rn_am}%)")
                     mid_desc.append(f"[오후] {get_mid_emoji(wf_pm)} {wf_pm} (☔{rn_pm}%)")
                 else:
-                    wf_rep_val = l_items.get(f'wf{i}')
-                    rn_st = l_items.get(f'rnSt{i}')
+                    wf_rep_val = l_items.get(f'wf{field_i}')
+                    rn_st = l_items.get(f'rnSt{field_i}')
                     mid_desc.append(f"[종일] {get_mid_emoji(wf_rep_val)} {wf_rep_val} (☔{rn_st}%)")
 
                 event.add('summary', f"{get_mid_emoji(wf_rep)} {t_min}/{t_max}°C")
