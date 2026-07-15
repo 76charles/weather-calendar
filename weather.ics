@@ -6,13 +6,12 @@ SUMMARY:☀️ 23°C/29°C
 DTSTART;VALUE=DATE:20260715
 DTEND;VALUE=DATE:20260716
 UID:20260715@short_summary
-DESCRIPTION:[15시] ☀️ 맑음 29°C (💧80% 🚩2.3m/s)\n[16시] ⛅ 
- 구름많음 29°C (💧80% 🚩2.6m/s)\n[17시] ☁️ 흐림 29°C (💧
- 75% 🚩2.6m/s)\n[18시] ⛅ 구름많음 28°C (💧75% 🚩2.4m/s)\n[19
- 시] ☁️ 흐림 26°C (💧80% 🚩1.6m/s)\n[20시] ☁️ 흐림 25°C
-  (💧80% 🚩1.1m/s)\n[21시] ☁️ 흐림 24°C (💧85% 🚩0.5m/s)\n[
- 22시] ☁️ 흐림 24°C (💧85% 🚩0.5m/s)\n[23시] ☁️ 흐림 23
- °C (💧90% 🚩0.1m/s)\n\n최종 업데이트: 2026-07-15 14:10:35 (KST)
+DESCRIPTION:[17시] ☁️ 흐림 29°C (💧75% 🚩2.6m/s)\n[18시] ⛅ 
+ 구름많음 28°C (💧75% 🚩2.4m/s)\n[19시] ☁️ 흐림 26°C (💧
+ 80% 🚩1.6m/s)\n[20시] ☁️ 흐림 25°C (💧80% 🚩1.1m/s)\n[21시]
+  ☁️ 흐림 24°C (💧85% 🚩0.5m/s)\n[22시] ☁️ 흐림 24°C (
+ 💧85% 🚩0.5m/s)\n[23시] ☁️ 흐림 23°C (💧90% 🚩0.1m/s)\n\n
+ 최종 업데이트: 2026-07-15 16:24:06 (KST)
 LOCATION:삼송
 END:VEVENT
 BEGIN:VEVENT
@@ -37,7 +36,7 @@ DESCRIPTION:[00시] ☁️ 흐림 23°C (💧95% 🚩0.1m/s)\n[01시] ☀
  시] ☀️ 맑음 26°C (💧65% 🚩1.2m/s)\n[21시] ⛅ 구름많음 25
  °C (💧70% 🚩0.8m/s)\n[22시] ☀️ 맑음 25°C (💧75% 🚩0.5m/s)
  \n[23시] ☀️ 맑음 24°C (💧80% 🚩0.2m/s)\n\n최종 업데이트:
-  2026-07-15 14:10:35 (KST)
+  2026-07-15 16:24:06 (KST)
 LOCATION:삼송
 END:VEVENT
 BEGIN:VEVENT
@@ -62,7 +61,7 @@ DESCRIPTION:[00시] ☀️ 맑음 24°C (💧85% 🚩0.1m/s)\n[01시] ☁
  ☁️ 흐림 27°C (💧60% 🚩1.2m/s)\n[21시] ☁️ 흐림 27°C (
  💧60% 🚩1.2m/s)\n[22시] ☁️ 흐림 26°C (💧65% 🚩1.2m/s)\n[23
  시] ☁️ 흐림 26°C (💧70% 🚩1.2m/s)\n\n최종 업데이트: 2026
- -07-15 14:10:35 (KST)
+ -07-15 16:24:06 (KST)
 LOCATION:삼송
 END:VEVENT
 BEGIN:VEVENT
@@ -86,7 +85,7 @@ DESCRIPTION:[00시] ☁️ 흐림 25°C (💧75% 🚩1.2m/s)\n[01시] ☁
  림 29°C (💧45% 🚩1m/s)\n[20시] ☁️ 흐림 29°C (💧45% 🚩1m/
  s)\n[21시] ⛅ 구름많음 27°C (💧60% 🚩1m/s)\n[22시] ⛅ 구름
  많음 27°C (💧60% 🚩1m/s)\n[23시] ⛅ 구름많음 27°C (💧60% 
- 🚩1m/s)\n\n최종 업데이트: 2026-07-15 14:10:35 (KST)
+ 🚩1m/s)\n\n최종 업데이트: 2026-07-15 16:24:06 (KST)
 LOCATION:삼송
 END:VEVENT
 BEGIN:VEVENT
@@ -95,7 +94,7 @@ DTSTART;VALUE=DATE:20260719
 DTEND;VALUE=DATE:20260720
 UID:20260719@mid
 DESCRIPTION:[오전] 🌧️ 흐리고 비 (☔60%)\n[오후] 🌧️ 흐
- 리고 비 (☔60%)\n\n최종 업데이트: 2026-07-15 14:10:35 (KST)
+ 리고 비 (☔60%)\n\n최종 업데이트: 2026-07-15 16:24:06 (KST)
 LOCATION:삼송
 END:VEVENT
 BEGIN:VEVENT
@@ -104,7 +103,7 @@ DTSTART;VALUE=DATE:20260720
 DTEND;VALUE=DATE:20260721
 UID:20260720@mid
 DESCRIPTION:[오전] 🌧️ 흐리고 비 (☔60%)\n[오후] 🌧️ 흐
- 리고 비 (☔60%)\n\n최종 업데이트: 2026-07-15 14:10:35 (KST)
+ 리고 비 (☔60%)\n\n최종 업데이트: 2026-07-15 16:24:06 (KST)
 LOCATION:삼송
 END:VEVENT
 BEGIN:VEVENT
@@ -113,7 +112,7 @@ DTSTART;VALUE=DATE:20260721
 DTEND;VALUE=DATE:20260722
 UID:20260721@mid
 DESCRIPTION:[오전] ⛅ 구름많음 (☔30%)\n[오후] ⛅ 구름많음 
- (☔30%)\n\n최종 업데이트: 2026-07-15 14:10:35 (KST)
+ (☔30%)\n\n최종 업데이트: 2026-07-15 16:24:06 (KST)
 LOCATION:삼송
 END:VEVENT
 BEGIN:VEVENT
@@ -122,7 +121,7 @@ DTSTART;VALUE=DATE:20260722
 DTEND;VALUE=DATE:20260723
 UID:20260722@mid
 DESCRIPTION:[오전] ⛅ 구름많음 (☔30%)\n[오후] ⛅ 구름많음 
- (☔30%)\n\n최종 업데이트: 2026-07-15 14:10:35 (KST)
+ (☔30%)\n\n최종 업데이트: 2026-07-15 16:24:06 (KST)
 LOCATION:삼송
 END:VEVENT
 BEGIN:VEVENT
@@ -131,7 +130,7 @@ DTSTART;VALUE=DATE:20260723
 DTEND;VALUE=DATE:20260724
 UID:20260723@mid
 DESCRIPTION:[종일] 🌧️ 흐리고 비 (☔60%)\n\n최종 업데이트
- : 2026-07-15 14:10:35 (KST)
+ : 2026-07-15 16:24:06 (KST)
 LOCATION:삼송
 END:VEVENT
 BEGIN:VEVENT
@@ -140,7 +139,7 @@ DTSTART;VALUE=DATE:20260724
 DTEND;VALUE=DATE:20260725
 UID:20260724@mid
 DESCRIPTION:[종일] ⛅ 구름많음 (☔30%)\n\n최종 업데이트: 202
- 6-07-15 14:10:35 (KST)
+ 6-07-15 16:24:06 (KST)
 LOCATION:삼송
 END:VEVENT
 BEGIN:VEVENT
@@ -149,7 +148,7 @@ DTSTART;VALUE=DATE:20260725
 DTEND;VALUE=DATE:20260726
 UID:20260725@mid
 DESCRIPTION:[종일] ⛅ 구름많음 (☔30%)\n\n최종 업데이트: 202
- 6-07-15 14:10:35 (KST)
+ 6-07-15 16:24:06 (KST)
 LOCATION:삼송
 END:VEVENT
 END:VCALENDAR
