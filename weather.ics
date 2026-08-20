@@ -78,19 +78,6 @@ DESCRIPTION:[00시] ☁️ 흐림 25°C (💧90% 🚩0.9m/s)\n[01시] ⛅
 LOCATION:삼송
 END:VEVENT
 BEGIN:VEVENT
-SUMMARY:⛅ 24°C/28°C
-DTSTART;VALUE=DATE:20260820
-DTEND;VALUE=DATE:20260821
-UID:20260820@short_summary
-DESCRIPTION:[18시] ⛅ 구름많음 28°C (💧70% 🚩0.7m/s)\n[19시] 
- ⛅ 구름많음 26°C (💧75% 🚩0.5m/s)\n[20시] ⛅ 구름많음 26°
- C (💧80% 🚩0.3m/s)\n[21시] ⛅ 구름많음 25°C (💧80% 🚩0.6m/s
- )\n[22시] ⛅ 구름많음 25°C (💧85% 🚩0.3m/s)\n[23시] ⛅ 구름
- 많음 24°C (💧85% 🚩0.3m/s)\n\n최종 업데이트: 2026-08-20 17:57
- :42 (KST)
-LOCATION:삼송
-END:VEVENT
-BEGIN:VEVENT
 SUMMARY:⛅ 25/32°C
 DTSTART;VALUE=DATE:20260824
 DTEND;VALUE=DATE:20260825
