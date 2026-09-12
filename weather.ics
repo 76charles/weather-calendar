@@ -2,23 +2,6 @@ BEGIN:VCALENDAR
 X-WR-CALNAME:기상청 날씨
 X-WR-TIMEZONE:Asia/Seoul
 BEGIN:VEVENT
-SUMMARY:☀️ 19°C/26°C
-DTSTART;VALUE=DATE:20260912
-DTEND;VALUE=DATE:20260913
-UID:20260912@short_summary
-DESCRIPTION:[11시] ☀️ 맑음 23°C (💧60% 🚩0.8m/s)\n[12시] ☀
- ️ 맑음 24°C (💧55% 🚩1m/s)\n[13시] ☀️ 맑음 25°C (💧55% 
- 🚩0.8m/s)\n[14시] ☀️ 맑음 26°C (💧50% 🚩1m/s)\n[15시] ⛅ 
- 구름많음 26°C (💧50% 🚩0.8m/s)\n[16시] ☀️ 맑음 26°C (💧
- 50% 🚩1m/s)\n[17시] ☀️ 맑음 25°C (💧55% 🚩1m/s)\n[18시] ⛅
-  구름많음 24°C (💧65% 🚩1.3m/s)\n[19시] ⛅ 구름많음 22°C (
- 💧75% 🚩1.3m/s)\n[20시] ⛅ 구름많음 21°C (💧80% 🚩1m/s)\n[2
- 1시] ⛅ 구름많음 20°C (💧80% 🚩0.8m/s)\n[22시] ⛅ 구름많
- 음 20°C (💧85% 🚩0.6m/s)\n[23시] ⛅ 구름많음 19°C (💧85% 
- 🚩0.4m/s)\n\n최종 업데이트: 2026-09-12 10:09:42 (KST)
-LOCATION:삼송
-END:VEVENT
-BEGIN:VEVENT
 SUMMARY:⛅ 17°C/25°C
 DTSTART;VALUE=DATE:20260913
 DTEND;VALUE=DATE:20260914
