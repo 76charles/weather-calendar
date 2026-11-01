@@ -30,7 +30,7 @@ jobs:
         attempt: [1, 2, 3, 4, 5]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -73,7 +73,7 @@ jobs:
 
       - name: Upload attempt report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: report-attempt-${{ matrix.attempt }}
           path: report/report-${{ matrix.attempt }}.json
@@ -82,7 +82,7 @@ jobs:
       # API를 실제로 받아온(캐시 폴백이 아닌) 시도만 artifact로 올립니다.
       - name: Upload result (only if API succeeded)
         if: steps.run_script.outcome == 'success'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: weather-ics-attempt-${{ matrix.attempt }}
           path: weather.ics
@@ -96,12 +96,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Download any successful attempt
         id: download
         continue-on-error: true
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           pattern: weather-ics-attempt-*
           path: attempts
@@ -109,7 +109,7 @@ jobs:
 
       - name: Download all attempt reports
         continue-on-error: true
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           pattern: report-attempt-*
           path: reports
