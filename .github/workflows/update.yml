@@ -1,11 +1,8 @@
 name: Update Weather ICS
 
 on:
-#  schedule:
-#    - cron: '15 17,20,23,2,5,8,11,14 * * *'
   repository_dispatch:
     types: [update-weather-ics]
-
   push:
     paths:
       - 'update_calendar.py'
@@ -19,9 +16,6 @@ permissions:
   id-token: write
 
 jobs:
-  # 여러 러너에서 동시에 시도합니다. 러너마다 다른 IP를 배정받기 때문에,
-  # 특정 IP 대역이 KMA API허브 쪽에서 막혀있어도 병렬 시도 중 하나는
-  # 안 막힌 IP를 받을 확률이 올라갑니다. (같은 authKey, 추가 인프라 불필요)
   fetch:
     runs-on: ubuntu-latest
     strategy:
@@ -29,16 +23,11 @@ jobs:
       matrix:
         attempt: [1, 2, 3, 4, 5]
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
-
-      - name: Install dependencies
-        run: pip install requests pytz icalendar
+      - run: pip install requests pytz icalendar
 
       - name: Log runner IP
         id: getip
@@ -46,7 +35,6 @@ jobs:
         run: |
           IP=$(curl -s --max-time 10 ifconfig.me || echo "unknown")
           echo "ip=$IP" >> "$GITHUB_OUTPUT"
-          echo "[attempt ${{ matrix.attempt }}] Runner outbound IP: $IP"
 
       - name: Run update script
         id: run_script
@@ -62,46 +50,38 @@ jobs:
           TZ: Asia/Seoul
         run: python -u update_calendar.py
 
-      # 성공/실패 여부와 상관없이, 이번 시도의 IP·결과를 리포트 파일로 남깁니다.
       - name: Write attempt report
         if: always()
         run: |
           mkdir -p report
-          cat > "report/report-${{ matrix.attempt }}.json" << EOF
-          {"attempt": ${{ matrix.attempt }}, "ip": "${{ steps.getip.outputs.ip }}", "outcome": "${{ steps.run_script.outcome }}"}
-          EOF
+          echo "{\"attempt\": ${{ matrix.attempt }}, \"ip\": \"${{ steps.getip.outputs.ip }}\", \"outcome\": \"${{ steps.run_script.outcome }}\"}" > report/report-${{ matrix.attempt }}.json
 
       - name: Upload attempt report
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: report-attempt-${{ matrix.attempt }}
           path: report/report-${{ matrix.attempt }}.json
           retention-days: 7
 
-      # API를 실제로 받아온(캐시 폴백이 아닌) 시도만 artifact로 올립니다.
       - name: Upload result (only if API succeeded)
         if: steps.run_script.outcome == 'success'
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: weather-ics-attempt-${{ matrix.attempt }}
           path: weather.ics
           retention-days: 1
 
-  # fetch의 병렬 시도 중 성공한 게 하나라도 있으면 그걸로 커밋하고,
-  # 셋 다 실패했으면 기존 파일 그대로 두고(=변경 없음) 잡 실패로 표시합니다.
   commit:
     needs: fetch
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
 
       - name: Download any successful attempt
-        id: download
         continue-on-error: true
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           pattern: weather-ics-attempt-*
           path: attempts
@@ -109,7 +89,7 @@ jobs:
 
       - name: Download all attempt reports
         continue-on-error: true
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           pattern: report-attempt-*
           path: reports
@@ -124,7 +104,6 @@ jobs:
             echo "| Attempt | IP | 결과 |"
             echo "|---|---|---|"
           } >> "$GITHUB_STEP_SUMMARY"
-
           success_count=0
           total_count=0
           if [ -d reports ]; then
@@ -133,17 +112,9 @@ jobs:
               ip=$(jq -r '.ip' "$f")
               outcome=$(jq -r '.outcome' "$f")
               total_count=$((total_count + 1))
-              if [ "$outcome" = "success" ]; then
-                mark="✅ 성공"
-                success_count=$((success_count + 1))
-              else
-                mark="❌ 실패"
-              fi
+              if [ "$outcome" = "success" ]; then mark="✅ 성공"; success_count=$((success_count + 1)); else mark="❌ 실패"; fi
               echo "| $attempt | $ip | $mark |" >> "$GITHUB_STEP_SUMMARY"
             done
-          fi
-          if [ "$total_count" -eq 0 ]; then
-            echo "| - | (리포트 없음) | - |" >> "$GITHUB_STEP_SUMMARY"
           fi
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "**${success_count} / ${total_count} 성공**" >> "$GITHUB_STEP_SUMMARY"
@@ -152,11 +123,9 @@ jobs:
         id: pick
         run: |
           if [ -f "attempts/weather.ics" ]; then
-            echo "성공한 시도를 찾았습니다. weather.ics를 교체합니다."
             cp attempts/weather.ics weather.ics
             echo "any_success=true" >> "$GITHUB_OUTPUT"
           else
-            echo "5번의 시도 모두 API 호출에 실패했습니다. 기존 weather.ics를 그대로 둡니다."
             echo "any_success=false" >> "$GITHUB_OUTPUT"
           fi
 
@@ -170,12 +139,10 @@ jobs:
           if [ -n "$(git status --porcelain)" ]; then
             git commit -m "Update weather.ics [$KST_TIME KST]"
             git push
-          else
-            echo "No changes to commit"
           fi
 
       - name: Fail job if every attempt fell back to cache
         if: steps.pick.outputs.any_success == 'false'
         run: |
-          echo "::error::5번의 병렬 시도 모두 API 호출에 실패해서 캐시 데이터를 유지했습니다. 이 워크플로우 실행은 실패로 표시됩니다."
+          echo "::error::5번의 병렬 시도 모두 API 호출에 실패"
           exit 1
